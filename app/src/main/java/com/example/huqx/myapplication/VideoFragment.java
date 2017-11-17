@@ -1,13 +1,19 @@
 package com.example.huqx.myapplication;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatSeekBar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
@@ -15,19 +21,19 @@ import android.widget.TextView;
 import android.widget.VideoView;
 
 
-public class VideoFragment extends android.app.Fragment implements OnClickListener{
+public class VideoFragment extends android.app.Fragment implements OnClickListener {
 
   IVideoView iVideoView;
-  VideoView videoView ;
+  VideoView videoView;
   AppCompatSeekBar acProcess;
-  TextView  timeEnd;
+  TextView timeEnd;
   TextView timeStart;
-  ImageButton ibControll;
-  RelativeLayout playControll;
+  ImageButton ibController;
+  RelativeLayout playController;
   RelativeLayout screenTouch;
-  int playState=0;
-  int seekToPosition;
-  int SCRRENLIGHT=0;
+  int playState = 0;
+  int SCRRENLIGHT = 0;
+
   private OnFragmentInteractionListener mListener;
 
   public VideoFragment() {
@@ -43,26 +49,27 @@ public class VideoFragment extends android.app.Fragment implements OnClickListen
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
       Bundle savedInstanceState) {
-      View view= inflater.inflate(R.layout.fragment_video,container,false);
-      videoView=view.findViewById(R.id.vv_player);
-      acProcess=view.findViewById(R.id.ac_process);
-      timeEnd=view.findViewById(R.id.tv_end);
-      timeStart=view.findViewById(R.id.tv_start);
-      ibControll=view.findViewById(R.id.ib_controller);
-      playControll=view.findViewById(R.id.rl_play_controller);
-      screenTouch=view.findViewById(R.id.rl_screen);
-      Log.d("设置点击监听","标记");
-      acProcess.setClickable(true);
-      playControll.setClickable(true);
-      screenTouch.setClickable(true);
-      ibControll.setOnClickListener(this);
-      acProcess.setOnClickListener(this);
-      playControll.setOnClickListener(this);
-      screenTouch.setOnClickListener(this);
-      screenTouch.setOnClickListener(this);
+    View view = inflater.inflate(R.layout.fragment_video, container, false);
+    videoView = view.findViewById(R.id.vv_player);
+    acProcess = view.findViewById(R.id.ac_process);
+    timeEnd = view.findViewById(R.id.tv_end);
+    timeStart = view.findViewById(R.id.tv_start);
+    playController = view.findViewById(R.id.rl_play_controller);
+    ibController = view.findViewById(R.id.ib_controller);
+    screenTouch = view.findViewById(R.id.rl_screen);
+    Log.d("设置点击监听", "标记");
+    acProcess.setClickable(true);
+    playController.setClickable(true);
+    screenTouch.setClickable(true);
+    videoView.setClickable(true);
+    videoView.setOnClickListener(this);
+    ibController.setOnClickListener(this);
+    acProcess.setOnClickListener(this);
+    playController.setOnClickListener(this);
+    screenTouch.setOnClickListener(this);
+    iVideoView.setVideoView(videoView);
 
-      iVideoView.setVideoView(videoView);
-      iVideoView.setUri("http://www.cnblogs.com/yangqiangyu/p/5167812.html");
+    iVideoView.setUri("http://flashmedia.eastday.com/newdate/news/2016-11/shznews1125-19.mp4");
 
     return view;
   }
@@ -77,10 +84,27 @@ public class VideoFragment extends android.app.Fragment implements OnClickListen
   @Override
   public void onAttach(Context context) {
     super.onAttach(context);
-    //videoView.setOnClickListener(this);
-    Log.d("新标记","123");
-    iVideoView=new IVideoView(context);
+    iVideoView = new IVideoView(context);
+  }
 
+  @Override
+  public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+
+    videoView.setOnTouchListener(new OnTouchListener() {
+      @Override
+      public boolean onTouch(View v, MotionEvent event) {
+        screenOn();
+        screenOff();
+        return false;
+      }
+    });
+    acProcess.setMax(1000);
+    Log.d("seekbar", "值是" + iVideoView.getDuring());
+    Log.d("seekbar", "值是" + iVideoView.getCurrentPosition());
+    acProcess.setProgress(iVideoView.getCurrentPosition() / iVideoView.getDuring() * 1000);
+//    timeEnd.setText(iVideoView.getDuring());
+//    timeStart.setText(iVideoView.getCurrentPosition());
+    super.onActivityCreated(savedInstanceState);
   }
 
   @Override
@@ -91,33 +115,33 @@ public class VideoFragment extends android.app.Fragment implements OnClickListen
 
   @Override
   public void onClick(View v) {
-    Log.d("进入点击事件","标记");
-      switch (v.getId()){
-        case R.id.rl_screen:
-             screenOn();
-        case R.id.ib_controller:
-            if (playState==0){
-              videoView.start();
-              playState=1;
-              ibControll.setImageResource(R.drawable.detail_play);
-            }else
-            {
-              videoView.pause();
-              playState=0;
-              ibControll.setImageResource(R.drawable.detail_pause);
-            }
-            screenOff();
-          Log.d("标记","有反应");
-            break;
-        case R.id.ac_process:
-
-             break;
-        case R.id.vv_player:
-            screenOff();
-             break;
-        default:
-          screenOff();
-      }
+    switch (v.getId()) {
+      case R.id.ib_controller:
+        screenOn();
+        if (playState == 0) {
+//          iVideoView.start();
+          videoView.start();
+          Log.d(TAG, "onClick: 检查是否正在播放"+videoView.isPlaying());
+          updateUi();
+          playState = 1;
+          ibController.setImageResource(R.drawable.detail_pause);
+        } else {
+          iVideoView.pause();
+          playState = 0;
+          ibController.setImageResource(R.drawable.detail_play);
+        }
+        screenOff();
+        break;
+      case R.id.ac_process:
+        screenOn();
+        break;
+      case R.id.vv_player:
+        screenOn();
+        screenOff();
+        break;
+      default:
+        screenOff();
+    }
   }
 
   public interface OnFragmentInteractionListener {
@@ -125,19 +149,54 @@ public class VideoFragment extends android.app.Fragment implements OnClickListen
     // TODO: Update argument type and name
     void onFragmentInteraction(Uri uri);
   }
-  public void screenOff(){
-    try {
-      Thread.sleep(2000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    ibControll.setVisibility(View.INVISIBLE);
-    playControll.setVisibility(View.INVISIBLE);
-    SCRRENLIGHT=0;
+
+  public void screenOn() {
+    ibController.setVisibility(View.VISIBLE);
+    playController.setVisibility(View.VISIBLE);
+    acProcess.setVisibility(View.VISIBLE);
+    SCRRENLIGHT = 0;
   }
-  public void screenOn(){
-    playControll.setVisibility(View.VISIBLE);
-    ibControll.setVisibility(View.VISIBLE);
-    SCRRENLIGHT=1;
+
+  public void screenOff() {
+    new Handler().postDelayed(new Runnable() {
+      @Override
+      public void run() {
+        ibController.setVisibility(View.INVISIBLE);
+        playController.setVisibility(View.INVISIBLE);
+        SCRRENLIGHT = 1;
+      }
+    }, 3000);
+  }
+
+  public void updateUi(){
+    Handler handler=new Handler();
+    handler.post(new Runnable() {
+      @Override
+      public void run() {
+        for (int i=0;i<20;i++){
+               timeStart.setText(videoView.getCurrentPosition()+"");
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }}
+    });
+
+//    new android.os.Handler().postDelayed(new Runnable() {
+//      @Override
+//      public void run() {
+//        Log.d(TAG, "run: 准备更新ui"+videoView.isPlaying());
+//           while (iVideoView.isPlaying()) {
+//             timeStart.setText(iVideoView.getCurrentPosition() + "123");
+//             Log.d(TAG, "run: 标记:" + videoView.isPlaying());
+//             try {
+//               Thread.sleep(1000);
+//             } catch (InterruptedException e) {
+//               e.printStackTrace();
+//             }
+//           }
+//      }
+//    },1000);
   }
 }

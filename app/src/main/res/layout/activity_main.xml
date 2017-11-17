@@ -12,7 +12,6 @@
     android:id="@+id/video_test"
     android:name="com.example.huqx.myapplication.VideoFragment"
     >
-
   </fragment>
 
 </RelativeLayout>
